@@ -10,6 +10,10 @@ Findings come from static disassembly of the firmwares plus an instrumented
 bsnes/SameBoy emulator. Emulator-measured numbers are labelled as such; where
 hardware behaviour can't be determined from the firmware it is called out.
 
+## AI disclosure
+
+Everything in this repo is produced by Claude.
+
 ## Key findings
 
 - **Two Game Boy runs per SNES reset.** Run 1 reads the six header packets and
