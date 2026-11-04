@@ -2,7 +2,7 @@
 # sweep.sh bios cart pal(0/1) frames
 bios=$1; cart=$2; pal=$3; fr=$4
 for gap in $(seq 0 17 544); do
-  python3 -I mkboot2.py /tmp/claude-0/-home-claude/9b65dac0-328a-5ecb-b0b0-20b7a40f033d/scratchpad/emu/sw_$$.bin $cart $gap 0
+  python3 -I mkboot2.py sw_$$.bin $cart $gap 0
   if [ $pal = 1 ]; then export FORCE_PAL=1; else unset FORCE_PAL; fi
   SINGLEBUF=1 SGB_BOOT=$PWD/sw_$$.bin ./fe ../bsnes/bsnes_libretro.so $PWD/sys $bios $PWD/$cart $fr 2>&1 | python3 -I -c "
 import sys,re
