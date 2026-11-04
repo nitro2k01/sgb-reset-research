@@ -1,0 +1,14 @@
+w/*
+!w/README.md
+emu/sys/
+emu/*.gb
+emu/*.bin
+emu/*.ppm
+emu/*.png
+emu/fe
+sb/boottime
+sb/*.gb
+sb/*.bin
+bsnes/
+*.asm.out
+__pycache__/

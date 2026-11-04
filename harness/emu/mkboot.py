@@ -1,0 +1,43 @@
+import sys
+# mkboot.py out.bin cart.gb spec...   spec: H0..H5 (header packet k), or hex bytes (literal), or H4:off=val (header pkt with byte patched), or H4!cmd=xx
+out=sys.argv[1]; cart=open(sys.argv[2],'rb').read()
+def hdr(k):
+    cmds=[0xf1,0xf3,0xf5,0xf7,0xf9,0xfb]
+    n=14 if k<5 else 6
+    d=cart[0x104+14*k:0x104+14*k+n]
+    return bytearray(bytes([cmds[k],sum(d)&0xff])+d).ljust(16,b'\0')
+pk=[]
+for s in sys.argv[3:]:
+    if s.startswith('H'):
+        k=int(s[1]); p=hdr(k)
+        for mod in s[2:].split(',')[0:] if len(s)>2 else []:
+            mod=mod.lstrip(':')
+            if not mod: continue
+            o,v=mod.split('='); p[int(o,16)]=int(v,16)
+        pk.append(bytes(p))
+    else: pk.append(bytes.fromhex(s).ljust(16,b'\0'))
+code=bytearray()
+def e(*b): code.extend(b)
+e(0x31,0xfe,0xff)            # ld sp
+e(0x3e,0x91,0xe0,0x40)       # lcd on
+e(0x21,0,0)                  # ld hl,pkts (fixup)
+fx=len(code)-2
+e(0x0e,len(pk))              # ld c,n
+loop=len(code)
+# send packet at hl (preserve c)
+e(0xc5)                       # push bc
+e(0xaf,0xe0,0x00,0x3e,0x30,0xe0,0x00,0x06,0x10)
+byte=len(code); e(0x1e,0x08,0x2a,0x57)
+bit=len(code); e(0xcb,0x42,0x3e,0x10,0x20,0x02,0x3e,0x20,0xe0,0x00,0x3e,0x30,0xe0,0x00,0xcb,0x1a,0x1d)
+e(0x20,(bit-(len(code)+2))&0xff)
+e(0x05); e(0x20,(byte-(len(code)+2))&0xff)
+e(0x3e,0x20,0xe0,0x00,0x3e,0x30,0xe0,0x00)
+# delay 4 frames (same as original $00C2)
+e(0x16,0x04); w=len(code); e(0xf0,0x44,0xfe,0x90,0x20,0xfa,0x1e,0x00,0x1d,0x20,0xfd,0x15); e(0x20,(w-(len(code)+2))&0xff)
+e(0xc1,0x0d); e(0x20,(loop-(len(code)+2))&0xff)
+e(0xc3,0xfc,0x00)            # jp $00fc
+p0=len(code); code[fx]=p0&0xff; code[fx+1]=p0>>8
+for p in pk: code.extend(p)
+assert len(code)<=0xfc, len(code)
+rom=bytearray(256); rom[:len(code)]=code; rom[0xfc:0x100]=bytes([0x3e,0x01,0xe0,0x50])
+open(out,'wb').write(rom)

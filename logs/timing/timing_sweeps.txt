@@ -1,0 +1,14 @@
+Run-1 reaction sweep (custom boot ROM, zero tail; 6th-packet phase swept across >1 frame)
+react = time from 6th header packet completion to SNES writing $6003=$01
+read  = time from packet completion until SNES has read $700F (busy-wait parser)
+v1.0  NTSC SGB-flag cart : react 3.985..20.560 ms, read max 0.122 ms
+v1.1  NTSC SGB-flag cart : react 3.984..20.561 ms, read max 0.122 ms
+v1.2  NTSC SGB-flag cart : react 3.984..20.561 ms, read max 0.122 ms
+v1.2  NTSC non-SGB cart  : react 4.556..21.133 ms, read max 0.122 ms
+SGB2  NTSC SGB-flag cart : react 3.985..20.561 ms, read max 0.122 ms
+SGB2  NTSC non-SGB cart  : react 4.556..21.133 ms, read max 0.122 ms
+v1.1  PAL  SGB-flag cart : react 4.022..23.955 ms, read max 0.123 ms
+v1.2  PAL  SGB-flag cart : react 4.022..23.955 ms, read max 0.123 ms
+v1.2  PAL  non-SGB cart  : react 4.598..24.531 ms, read max 0.123 ms
+Run 2, stock boot ROM: first normal-mode packet read after 6th header packet:
+v1.0/v1.2 NTSC +140.8 ms, v1.2 PAL +164.7 ms, SGB2 +148.0 ms (game entry +62.9/+63.5/+64.5 ms)

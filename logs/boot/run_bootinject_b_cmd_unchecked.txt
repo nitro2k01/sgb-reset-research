@@ -1,0 +1,39 @@
+custom boot rom loaded
+region=NTSC
+    0.036ms F00001 V000 H0782 pc=008136 | write $6003 = 01 (RESET)
+          end of F00001: state $0100=00 $0101=00 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+          end of F00005: state $0100=0f $0101=00 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+          end of F00100: state $0100=0f $0101=01 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+ 1945.378ms F00118 V239 H0738 pc=00b8a7 | write $6003 = 81 (RUN)
+ 1945.408ms F00118 V240 H0000 pc=00b93c | GB fetch $0000 (boot ROM start)
+ 1948.138ms F00118 V021 H0000 pc=00be5e | GB->ICD packet complete: f1 70 ce ed (queue now 1)
+ 1948.147ms F00118 V021 H0182 pc=00be5b | SNES dequeues packet: f1 70 ce ed .. (queue left 0)
+ 2013.426ms F00122 V001 H0000 pc=00be5b | GB->ICD packet complete: 00 60 00 0d (queue now 1)
+ 2013.426ms F00122 V001 H0010 pc=00be5b | SNES dequeues packet: 00 60 00 0d .. (queue left 0)
+ 2078.776ms F00126 V244 H0000 pc=00be3e | GB->ICD packet complete: 89 59 dd dd (queue now 1)
+ 2078.778ms F00126 V244 H0040 pc=00be5b | SNES dequeues packet: 89 59 dd dd .. (queue left 0)
+ 2144.191ms F00130 V226 H0000 pc=00be3f | GB->ICD packet complete: 01 39 99 9f (queue now 1)
+ 2144.193ms F00130 V226 H0054 pc=00be5b | SNES dequeues packet: 01 39 99 9f .. (queue left 0)
+ 2209.668ms F00133 V209 H0000 pc=00be3f | GB->ICD packet complete: 00 00 00 00 (queue now 1)
+ 2209.671ms F00133 V209 H0052 pc=00be5b | SNES dequeues packet: 00 00 00 00 .. (queue left 0)
+ 2275.019ms F00137 V190 H0000 pc=00be44 | GB->ICD packet complete: 00 cb 00 33 (queue now 1)
+ 2275.023ms F00137 V190 H0082 pc=00be5b | SNES dequeues packet: 00 cb 00 33 .. (queue left 0)
+          end of F00137: state $0100=0f $0101=01 $0102=0b | $02F6(sgb_en)=01 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+ 2279.511ms F00138 V260 H1000 pc=00b8b7 | write $6003 = 01 (RESET)
+          end of F00138: state $0100=0f $0101=02 $0102=00 | $02F6(sgb_en)=01 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+          end of F00427: state $0100=0f $0101=04 $0102=00 | $02F6(sgb_en)=01 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+ 7103.576ms F00428 V239 H0678 pc=00b0f2 | write $6003 = 81 (RUN)
+ 7103.608ms F00428 V240 H0000 pc=00be5d | GB fetch $0000 (boot ROM start)
+ 7106.339ms F00428 V021 H0000 pc=00be71 | GB->ICD packet complete: f1 70 ce ed (queue now 1)
+ 7106.346ms F00428 V021 H0158 pc=00be5b | SNES dequeues packet: f1 70 ce ed .. (queue left 0)
+ 7171.626ms F00432 V001 H0000 pc=00be5c | GB->ICD packet complete: 00 60 00 0d (queue now 1)
+ 7171.636ms F00432 V001 H0204 pc=00be5b | SNES dequeues packet: 00 60 00 0d .. (queue left 0)
+ 7236.977ms F00436 V244 H0000 pc=00be5a | GB->ICD packet complete: 89 59 dd dd (queue now 1)
+ 7236.978ms F00436 V244 H0016 pc=00be5b | SNES dequeues packet: 89 59 dd dd .. (queue left 0)
+ 7302.391ms F00440 V226 H0000 pc=00be58 | GB->ICD packet complete: 01 39 99 9f (queue now 1)
+ 7302.393ms F00440 V226 H0030 pc=00be5b | SNES dequeues packet: 01 39 99 9f .. (queue left 0)
+ 7367.869ms F00443 V209 H0000 pc=00be58 | GB->ICD packet complete: 00 00 00 00 (queue now 1)
+ 7367.870ms F00443 V209 H0028 pc=00be5b | SNES dequeues packet: 00 00 00 00 .. (queue left 0)
+ 7433.220ms F00447 V190 H0000 pc=00b110 | GB->ICD packet complete: 00 cb 00 33 (queue now 1)
+ 7433.222ms F00447 V190 H0058 pc=00be5b | SNES dequeues packet: 00 cb 00 33 .. (queue left 0)
+ 7495.903ms F00451 V129 H0000 pc=008481 | GB fetch $0100 (cartridge entry point reached)

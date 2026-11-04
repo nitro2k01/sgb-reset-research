@@ -1,0 +1,5 @@
+region=PAL
+    0.037ms F00001 V000 H0782 pc=008136 | write $6003 = 01 (RESET)
+          end of F00001: state $0100=00 $0101=00 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+          end of F00004: state $0100=0f $0101=00 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+          end of F00006: state $0100=0f $0101=06 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00

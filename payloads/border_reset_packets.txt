@@ -1,0 +1,14 @@
+# DATA_SND packets (16 bytes each) that install and arm the border reset payload.
+# Send in order; the last packet (JMP $1A00 into the $0818 hook) must come last.
+# Wait ~1 s after the last packet before further commands / GB reset (fade out+in).
+79 00 1A 00 0B C9 04 D0 63 08 E2 30 A9 60 8D 18
+79 0B 1A 00 0B 08 A9 01 8D 03 0C 8D 47 0C 9C 0C
+79 16 1A 00 0B 0F 9C 4B 0F 9C 4C 0F A9 E8 8F 01
+79 21 1A 00 0B C0 7E 22 2B D5 01 22 46 D5 01 C2
+79 2C 1A 00 0B 20 A9 00 82 85 C0 E2 20 A9 02 85
+79 37 1A 00 0B C2 22 D8 FE 00 22 7B F8 00 22 27
+79 42 1A 00 0B DC 01 22 FD F8 00 22 7B F8 00 A9
+79 4D 1A 00 0B 01 8D 48 0C 22 68 80 01 C2 20 A9
+79 58 1A 00 0B 10 82 85 C0 E2 20 A9 02 85 C2 22
+79 63 1A 00 05 DC FE 00 28 60 00 00 00 00 00 00
+79 18 08 00 03 4C 00 1A 00 00 00 00 00 00 00 00

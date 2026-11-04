@@ -1,0 +1,23 @@
+region=NTSC
+    0.036ms F00001 V000 H0782 pc=008136 | write $6003 = 01 (RESET)
+          end of F00001: state $0100=00 $0101=00 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+          end of F00005: state $0100=0f $0101=00 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+          end of F00100: state $0100=0f $0101=01 $0102=00 | $02F6(sgb_en)=00 $02FA(err)=00 $0F0D(warm)=00 $02F0(icon_en)=00
+ 1945.378ms F00118 V239 H0738 pc=00b8a7 | write $6003 = 81 (RUN)
+ 1945.408ms F00118 V240 H0000 pc=00b93c | GB fetch $0000 (boot ROM start)
+ 2010.949ms F00121 V224 H0000 pc=00be3f | GB->ICD packet complete: f1 71 cf ed (queue now 1)
+ 2010.952ms F00121 V224 H0062 pc=00be5b | SNES dequeues packet: f1 71 cf ed .. (queue left 0)
+ 2076.236ms F00125 V204 H0000 pc=00be42 | GB->ICD packet complete: f3 60 00 0d (queue now 1)
+ 2076.241ms F00125 V204 H0108 pc=00be5b | SNES dequeues packet: f3 60 00 0d .. (queue left 0)
+ 2141.587ms F00129 V185 H0000 pc=00be71 | GB->ICD packet complete: f5 59 dd dd (queue now 1)
+ 2141.593ms F00129 V185 H0138 pc=00be5b | SNES dequeues packet: f5 59 dd dd .. (queue left 0)
+ 2207.001ms F00133 V167 H0000 pc=00be71 | GB->ICD packet complete: f7 39 99 9f (queue now 1)
+ 2207.008ms F00133 V167 H0152 pc=00be5b | SNES dequeues packet: f7 39 99 9f .. (queue left 0)
+ 2272.479ms F00137 V150 H0000 pc=00be71 | GB->ICD packet complete: f9 03 00 00 (queue now 1)
+ 2272.486ms F00137 V150 H0150 pc=00be5b | SNES dequeues packet: f9 03 00 00 .. (queue left 0)
+ 2337.830ms F00141 V131 H0000 pc=00be5e | GB->ICD packet complete: fb c8 00 33 (queue now 1)
+ 2337.838ms F00141 V131 H0180 pc=00be5b | SNES dequeues packet: fb c8 00 33 .. (queue left 0)
+          end of F00141: state $0100=0f $0101=01 $0102=0b | $02F6(sgb_en)=01 $02FA(err)=01 $0F0D(warm)=00 $02F0(icon_en)=00
+ 2346.069ms F00142 V260 H0994 pc=00b8b7 | write $6003 = 01 (RESET)
+          end of F00142: state $0100=0f $0101=03 $0102=00 | $02F6(sgb_en)=01 $02FA(err)=01 $0F0D(warm)=00 $02F0(icon_en)=00
+ 2362.330ms F00143 V254 H1056 pc=00b0a1 | write $6003 = 01 (RESET)

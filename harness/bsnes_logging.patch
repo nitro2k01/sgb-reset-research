@@ -1,0 +1,249 @@
+diff --git a/bsnes/sfc/coprocessor/icd/icd.cpp b/bsnes/sfc/coprocessor/icd/icd.cpp
+index 1b5199c..5394955 100644
+--- a/bsnes/sfc/coprocessor/icd/icd.cpp
++++ b/bsnes/sfc/coprocessor/icd/icd.cpp
+@@ -1,8 +1,35 @@
+ #include <sfc/sfc.hpp>
++#include <stdio.h>
+ 
+ namespace SuperFamicom {
+ 
+ ICD icd;
++void logjoy(const char*msg, unsigned v);
++unsigned g_frame;
++void dumpState() {
++  static int last=-1, lastflags=-1; auto*w=cpu.wram;
++  int st=(w[0x100]<<16)|(w[0x101]<<8);
++  int flags=(w[0x2f6]<<24)|(w[0x2fa]<<16)|(w[0xf0d]<<8)|w[0x2f0];
++  if(st!=last || flags!=lastflags || getenv("LOGALL"))
++    fprintf(stderr,"          end of F%05u: state $0100=%02x $0101=%02x $0102=%02x | $02F6(sgb_en)=%02x $02FA(err)=%02x $0F0D(warm)=%02x $02F0(icon_en)=%02x\n",
++      g_frame,w[0x100],w[0x101],w[0x102],w[0x2f6],w[0x2fa],w[0xf0d],w[0x2f0]);
++  last=st; lastflags=flags;
++  if(getenv("DUMPADDR") && getenv("DUMPAT")) {
++    char key[32]; sprintf(key,",%u,",g_frame); string at={",",getenv("DUMPAT"),","};
++    if(strstr(at.data(),key)) {
++      fprintf(stderr,"          DUMP F%05u:",g_frame);
++      char buf[512]; strncpy(buf,getenv("DUMPADDR"),511); buf[511]=0;
++      for(char*t=strtok(buf,","); t; t=strtok(nullptr,",")) { unsigned a=strtoul(t,nullptr,16); fprintf(stderr," %04x=%02x",a,w[a&0x1ffff]); }
++      fprintf(stderr,"\n");
++    }
++  }
++}
++uint64_t g_lines=0;
++static int g_seen0=0,g_seen100=0;
++static int g_reading=0; static double g_pktdone=0;
++static double tms(){ return (g_lines*1364.0+cpu.hcounter())*1000.0/system.cpuFrequency(); }
++#define LOGT(...) do{ fprintf(stderr,"%9.3fms F%05u V%03u H%04u pc=%06x | ",tms(),g_frame,cpu.vcounter(),cpu.hcounter(),(unsigned)cpu.r.pc.d); fprintf(stderr,__VA_ARGS__); }while(0)
++
+ #include "interface.cpp"
+ #include "io.cpp"
+ #include "boot-roms.cpp"
+@@ -28,6 +55,8 @@ namespace SameBoy {
+   }
+ 
+   static auto read_memory(GB_gameboy_t*, uint16_t addr, uint8_t data) -> uint8_t {
++    if(addr==0x0000 && !g_seen0){ g_seen0=1; LOGT("GB fetch $0000 (boot ROM start)\n"); }
++    if(addr==0x0100 && !g_seen100){ g_seen100=1; LOGT("GB fetch $0100 (cartridge entry point reached)\n"); }
+     if(auto replace = icd.cheats.find(addr, data)) return replace();
+     return data;
+   }
+@@ -85,9 +114,11 @@ auto ICD::load() -> bool {
+   if(Frequency == 0) {
+     GB_init(&sameboy, GB_MODEL_SGB_NO_SFC);
+     GB_load_boot_rom_from_buffer(&sameboy, (const unsigned char*)&SGB1BootROM[0], 256);
++    if(getenv("SGB_BOOT")) { FILE*f=fopen(getenv("SGB_BOOT"),"rb"); static unsigned char b[256]; fread(b,1,256,f); fclose(f); GB_load_boot_rom_from_buffer(&sameboy,b,256); fprintf(stderr,"custom boot rom loaded\n"); }
+   } else {
+     GB_init(&sameboy, GB_MODEL_SGB2_NO_SFC);
+     GB_load_boot_rom_from_buffer(&sameboy, (const unsigned char*)&SGB2BootROM[0], 256);
++    if(getenv("SGB_BOOT")) { FILE*f=fopen(getenv("SGB_BOOT"),"rb"); static unsigned char b2[256]; fread(b2,1,256,f); fclose(f); GB_load_boot_rom_from_buffer(&sameboy,b2,256); fprintf(stderr,"custom boot rom loaded (SGB2 mode)\n"); }
+   }
+   GB_set_sample_rate_by_clocks(&sameboy, 256);
+   GB_set_highpass_filter_mode(&sameboy, GB_HIGHPASS_ACCURATE);
+@@ -176,6 +207,15 @@ auto ICD::power(bool reset) -> void {
+   vcounter = 0;
+ 
+   GB_reset(&sameboy);
++  g_seen0=0; g_seen100=0;
+ }
+ 
++void logjoy(const char*msg, unsigned v) {
++  if(!getenv("LOGJOY")) return;
++  LOGT("%s %02x\n", msg, v);
++}
++void logvid(const char*msg) {
++  if(!getenv("LOGVID")) return;
++  LOGT("%s\n", msg);
++}
+ }
+diff --git a/bsnes/sfc/coprocessor/icd/interface.cpp b/bsnes/sfc/coprocessor/icd/interface.cpp
+index c80d90a..d39c0fe 100644
+--- a/bsnes/sfc/coprocessor/icd/interface.cpp
++++ b/bsnes/sfc/coprocessor/icd/interface.cpp
+@@ -1,10 +1,13 @@
++void logvid(const char*);
+ auto ICD::ppuHreset() -> void {
++  if(vcounter == 143) logvid("GB line 143 complete (hreset)");
+   hcounter = 0;
+   vcounter++;
+   if((uint3)vcounter == 0) writeBank++;
+ }
+ 
+ auto ICD::ppuVreset() -> void {
++  logvid("GB VRESET (GB line 0 of new frame starts)");
+   hcounter = 0;
+   vcounter = 0;
+ }
+@@ -55,6 +58,8 @@ auto ICD::joypWrite(bool p14, bool p15) -> void {
+ 
+   //packet handling
+   if(p14 == 0 && p15 == 0) {  //pulse
++    if(pulseLock == 1 && getenv("LOGPULSE")) LOGT("GB reset pulse (packet start)\n");
++    if(g_reading && getenv("SINGLEBUF")) LOGT("WARNING: next packet started while SNES still reading previous\n");
+     pulseLock = 0;
+     packetOffset = 0;
+     bitOffset = 0;
+@@ -88,7 +93,11 @@ auto ICD::joypWrite(bool p14, bool p15) -> void {
+ 
+   if(packetLock == 1) {
+     if(p14 == 0 && p15 == 1) {
+-      if(packetSize < 64) packet[packetSize++] = joypPacket;
++      if(getenv("SINGLEBUF") && packetSize > 0) { LOGT("OVERRUN: previous packet still unread, overwritten\n"); packet[0] = joypPacket; }
++      else if(getenv("SINGLEBUF") && g_reading) { LOGT("OVERRUN: SNES still reading $7000-$700F of previous packet\n"); packet[packetSize++] = joypPacket; }
++      else if(packetSize < 64) packet[packetSize++] = joypPacket;
++      g_pktdone = tms();
++      { LOGT("GB->ICD packet complete: %02x %02x %02x %02x (queue now %u)\n",joypPacket[0],joypPacket[1],joypPacket[2],joypPacket[3],(unsigned)packetSize); }
+       packetLock = 0;
+       pulseLock = 1;
+     }
+diff --git a/bsnes/sfc/coprocessor/icd/io.cpp b/bsnes/sfc/coprocessor/icd/io.cpp
+index 1f32b2a..e5b2c22 100644
+--- a/bsnes/sfc/coprocessor/icd/io.cpp
++++ b/bsnes/sfc/coprocessor/icd/io.cpp
+@@ -10,6 +10,7 @@ auto ICD::readIO(uint addr, uint8 data) -> uint8 {
+   if(addr == 0x6002) {
+     data = packetSize > 0;
+     if(data) {
++      LOGT("SNES dequeues packet: %02x %02x %02x %02x .. (queue left %u)\n",packet[0][0],packet[0][1],packet[0][2],packet[0][3],(unsigned)packetSize-1);
+       for(auto n : range(16)) r7000[n] = packet[0][n];
+       packetSize--;
+       for(auto n : range(packetSize)) packet[n] = packet[n + 1];
+@@ -24,6 +25,8 @@ auto ICD::readIO(uint addr, uint8 data) -> uint8 {
+ 
+   //command port
+   if((addr & 0x40fff0) == 0x7000) {
++    if((addr&15)==0) g_reading=1;
++    if((addr&15)==15 && g_reading) { g_reading=0; LOGT("SNES finished reading $700F: %.3f ms after packet completion\n", tms()-g_pktdone); }
+     return r7000[addr & 15];
+   }
+ 
+@@ -52,6 +55,7 @@ auto ICD::writeIO(uint addr, uint8 data) -> void {
+   //d5,d4: 0 = 1-player, 1 = 2-player, 2 = 4-player, 3 = ???
+   //d1,d0: 0 = frequency divider (clock rate adjust)
+   if(addr == 0x6003) {
++    LOGT("write $6003 = %02x (%s)\n", data, (data&0x80)?"RUN":"RESET");
+     if((r6003 & 0x80) == 0x00 && (data & 0x80) == 0x80) {
+       power(true);  //soft reset
+     }
+@@ -74,6 +78,7 @@ auto ICD::writeIO(uint addr, uint8 data) -> void {
+     return;
+   }
+ 
++  if(addr >= 0x6004 && addr <= 0x6007) logjoy(addr==0x6004?"ICD write $6004 (P1)":addr==0x6005?"ICD write $6005 (P2)":addr==0x6006?"ICD write $6006 (P3)":"ICD write $6007 (P4)", data);
+   if(addr == 0x6004) { r6004 = data; return; }  //joypad 1
+   if(addr == 0x6005) { r6005 = data; return; }  //joypad 2
+   if(addr == 0x6006) { r6006 = data; return; }  //joypad 3
+diff --git a/bsnes/sfc/cpu/io.cpp b/bsnes/sfc/cpu/io.cpp
+index dd10da7..42f5b6a 100644
+--- a/bsnes/sfc/cpu/io.cpp
++++ b/bsnes/sfc/cpu/io.cpp
+@@ -1,3 +1,4 @@
++void logjoy(const char*, unsigned);
+ auto CPU::readRAM(uint addr, uint8 data) -> uint8 {
+   return wram[addr];
+ }
+@@ -48,7 +49,7 @@ auto CPU::readCPU(uint addr, uint8 data) -> uint8 {
+   case 0x4216: return io.rdmpy >> 0;  //RDMPYL
+   case 0x4217: return io.rdmpy >> 8;  //RDMPYH
+ 
+-  case 0x4218: return io.joy1 >> 0;   //JOY1L
++  case 0x4218: logjoy("SNES read $4218 (auto-read result P1)", io.joy1 & 0xff); return io.joy1 >> 0;   //JOY1L
+   case 0x4219: return io.joy1 >> 8;   //JOY1H
+   case 0x421a: return io.joy2 >> 0;   //JOY2L
+   case 0x421b: return io.joy2 >> 8;   //JOY2H
+@@ -126,6 +127,7 @@ auto CPU::writeCPU(uint addr, uint8 data) -> void {
+     //bit 0 is shared between JOYSER0 and JOYSER1:
+     //strobing $4016.d0 affects both controller port latches.
+     //$4017 bit 0 writes are ignored.
++    logjoy("SNES write $4016 (manual strobe)", data);
+     controllerPort1.device->latch(data & 1);
+     controllerPort2.device->latch(data & 1);
+     return;
+diff --git a/bsnes/sfc/cpu/timing.cpp b/bsnes/sfc/cpu/timing.cpp
+index 987c0dd..0348db4 100644
+--- a/bsnes/sfc/cpu/timing.cpp
++++ b/bsnes/sfc/cpu/timing.cpp
+@@ -94,7 +94,11 @@ auto CPU::step(uint clocks) -> void {
+ }
+ 
+ //called by ppu.tick() when Hcounter=0
++extern uint64_t g_lines;
++void logvid(const char*);
+ auto CPU::scanline() -> void {
++  g_lines++;
++  if(vcounter() == 0) logvid("SNES V0");
+   //forcefully sync S-CPU to other processors, in case chips are not communicating
+   synchronizeSMP();
+   synchronizePPU();
+@@ -217,7 +221,7 @@ auto CPU::joypadEdge() -> void {
+     //Williams Arcade's Greatest Hits
+     //World Masters Golf
+     if(!status.autoJoypadCounter && vcounter() >= ppu.vdisp()) {
+-      controllerPort1.device->latch(1);
++      logjoy("AUTO-JOYPAD hardware latch", 0); controllerPort1.device->latch(1);
+       controllerPort2.device->latch(1);
+       controllerPort1.device->latch(0);
+       controllerPort2.device->latch(0);
+@@ -247,7 +251,7 @@ auto CPU::joypadEdge() -> void {
+ 
+       if(status.autoJoypadActive && status.autoJoypadLatch) {
+         if(status.autoJoypadCounter == 0) {
+-          controllerPort1.device->latch(1);
++          logjoy("AUTO-JOYPAD hardware latch", 0); controllerPort1.device->latch(1);
+           controllerPort2.device->latch(1);
+           controllerPort1.device->latch(0);
+           controllerPort2.device->latch(0);
+diff --git a/bsnes/target-libretro/libretro.cpp b/bsnes/target-libretro/libretro.cpp
+index 8010816..30210ad 100644
+--- a/bsnes/target-libretro/libretro.cpp
++++ b/bsnes/target-libretro/libretro.cpp
+@@ -624,8 +624,10 @@ static void run_with_runahead(const int frames)
+ 	emulator->unserialize(state);
+ }
+ 
++namespace SuperFamicom { extern unsigned g_frame; void dumpState(); }
+ RETRO_API void retro_run()
+ {
++	SuperFamicom::g_frame++;
+ 	check_variables();
+ 	input_poll();
+ 
+@@ -635,6 +637,7 @@ RETRO_API void retro_run()
+ 		emulator->run();
+ 	else
+ 		run_with_runahead(run_ahead_frames);
++	SuperFamicom::dumpState();
+ }
+ 
+ RETRO_API size_t retro_serialize_size()
+diff --git a/bsnes/target-libretro/program.cpp b/bsnes/target-libretro/program.cpp
+index 81b9b66..8d5a48b 100644
+--- a/bsnes/target-libretro/program.cpp
++++ b/bsnes/target-libretro/program.cpp
+@@ -660,6 +660,7 @@ auto Program::loadSuperFamicom(string location) -> bool
+ 
+ 	superFamicom.title = heuristics.title();
+ 	superFamicom.region = heuristics.videoRegion();
++	if(getenv("FORCE_PAL")) superFamicom.region = "PAL";
+ 	superFamicom.manifest = heuristics.manifest();
+ 
+ 	hackPatchMemory(rom);
