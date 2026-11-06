@@ -1,7 +1,8 @@
 # 5. Free memory for payloads — what is (and isn't) known
 
-**There is no verified free-memory map yet.** Only a quick check was done,
-enough to pick `$1A00` for the border payload.
+**Superseded by [11](11-wram-map-for-snes-payloads.md)**, which has a measured
+map for all firmwares. This page is the quick check that was done to pick
+`$1A00` for the border payload (still inside a free range).
 
 ## What was checked
 

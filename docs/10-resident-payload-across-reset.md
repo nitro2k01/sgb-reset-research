@@ -19,28 +19,29 @@ mechanism that uses it becomes active.
 
 | Mechanism | Instruction | RAM pointer |
 |---|---|---|
-| NMI (vectors `$FFEA`/`$FFFA` → `$8100`) | `$8100: jml [$00bb]` | `$00BB–$00BD`, dereferenced every frame |
+| NMI (vectors `$FFEA`/`$FFFA` → `$8100`) | `$8100: jml [$00bb]` | `$00BB–$00BD`, but NMI is never enabled by the firmware (see below) |
 | Command hooks | `jsr $0800 / $0808 / $0810 / $0818` | the four hook bytes (code run in place) |
 | JUMP command | `$C72C: jml [$00b8]` | `$00B8–$00BA` |
 
 The IRQ vector (`$FFEE`/`$FFFE`) is a flat `$B50A` in ROM — no RAM involved.
 
-The **NMI pointer** is the one an ACE hook normally rides: the per-frame NMI
-jumps through `$00BB`, so while the flashcart payload has control, writing a
-pointer there makes the next frame's NMI enter the payload. It does not carry
-across a reset:
+The **NMI pointer**: the firmware never enables NMI — every `$4200` write has
+bit 7 clear (`$00`, `$31` = H/V IRQ + auto-joypad, `$01`) — so `$8100` only
+runs if a payload sets `$4200` bit 7 itself (as after `JUMP`, which loads
+`$00BB`). The per-frame work is the IRQ at `$B50A`, a fixed ROM vector. Across
+a reset:
 
 Reset entry `$8104`, in order:
 
-1. `SEI`; `STA $4200 = $00` → **NMI disabled** (second instruction of reset).
+1. `SEI`; `STA $4200 = $00` → interrupts disabled (second instruction of reset).
 2. clear `$0000–$07FC` → `$00BB/$BC/$BD` zeroed (with the whole zero-page
    pointer area).
-3. `$8160`: `$BB=$0A`, `$BC=$B5`, `$BD=0` → `$00BB` restored to `$00:B50A`
-   (the ROM frame handler).
+3. `$8160`: `$BB=$0A`, `$BC=$B5`, `$BD=0` → `$00BB` restored to `$00:B50A`.
 4. `$8166–$8171`: the four hooks written to `$60` (RTS).
-5. only later, `$81CD` (inside `$817A`): `STA $4200 = $31` → **NMI re-enabled**.
+5. only later, `$81CD` (inside `$817A`): `STA $4200 = $31` → IRQ (not NMI)
+   enabled.
 
-So the NMI pointer points back into ROM before NMI is switched on, and the
+So the NMI pointer is back in ROM (and NMI stays off), and the
 hooks are RTS before any hook is called. The JUMP pointer `$00B8` is loaded in
 ROM immediately before its own `jml`, so it requires the JUMP command to run at
 all. No boot-time transfer is left pointing at RAM.
@@ -97,7 +98,7 @@ Options that do work, outside the "pure RAM" constraint:
 
 The control-flow argument (10.1) is read from the SGB2 reset code and the
 vectors; it was not additionally stress-tested in the emulator here, but it
-follows from the ordering of NMI-disable → pointer restore → NMI-enable and
+follows from NMI never being enabled by the firmware, the pointer restore, and
 hook→RTS → first hook call. The single-use nature of the poison (10.2) is
 consistent with the `$D064`/`$823B` repair paths traced in
 [09](09-sgb2-dmg-mode-lock.md). The three "options that work" in 10.3 are design

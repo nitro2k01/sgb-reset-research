@@ -1,0 +1,15 @@
+import mkscript
+P=lambda *b: ('pkt',bytes(b)); W=lambda n: ('wait',n)
+def dsnd(addr,data):
+    out=[]
+    for i in range(0,len(data),11):
+        ch=data[i:i+11]; a=addr+i
+        out+=[P(0x79,a&0xff,(a>>8)&0xff,a>>16,len(ch),*ch),W(4)]
+    return out
+s=[W(255),W(45)]
+for n in (0,1,2,0):
+    pl=bytes([0x08,0xe2,0x30,0xa9,n,0x8d,0x03,0x0c,0x22,0x68,0x80,0x01,0xa9,0x60,0x8d,0x18,0x08,0x28,0x6b])
+    s+=dsnd(0x7e1a00,pl)
+    s+=dsnd(0x7e0818,bytes([0x22,0x00,0x1a,0x7e,0x60]))
+    s+=[W(255),W(45)]
+mkscript.build('borders012.gb',s,[])

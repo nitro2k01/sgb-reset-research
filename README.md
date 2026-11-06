@@ -44,17 +44,19 @@ Everything in this repo is produced by Claude.
 | [02](docs/02-boot-rom-reimplementation-timing.md) | What run 2 checks, minimum packet gaps and tail for a reimplemented boot ROM, "only two runs" |
 | [03](docs/03-flashcart-palettes.md) | Built-in palette tables (raw ROM offsets) and applying them from a flashcart loader |
 | [04](docs/04-border-reset-payload.md) | Restoring the stock border via a RAM-hook payload |
-| [05](docs/05-free-memory-notes.md) | What is known about free RAM for payloads (not a verified map) |
+| [05](docs/05-free-memory-notes.md) | First free-RAM notes (superseded by 11) |
 | [06](docs/06-controller-polling.md) | Controller polling rate and joypad forwarding to the ICD2 |
 | [07](docs/07-video-pipeline-and-latency.md) | ICD2 → VRAM pipeline, buffering, latency, racing-the-beam analysis |
 | [08](docs/08-boot-rom-cycle-formula.md) | Closed-form boot ROM cycle count as a function of header contents |
 | [09](docs/09-sgb2-dmg-mode-lock.md) | SGB2 L+Left "DMG mode" lock, warm-boot detection, and why it is ignored after Reset |
 | [10](docs/10-resident-payload-across-reset.md) | Whether a RAM-resident payload can survive and re-execute across a SNES reset (and the mid-run DMG-mode goal) |
+| [11](docs/11-wram-map-for-snes-payloads.md) | Measured WRAM map for uploading SNES programs with DATA_SND/DATA_TRN + JUMP, all firmwares; JUMP/IRQ/NMI rules; SGB1 ATTR_BLK overrun |
 
 ## Repository contents
 
 - `docs/` — the write-ups above.
-- `data/` — built-in palette title table and colour table as CSV.
+- `data/` — built-in palette title table and colour table as CSV;
+  `wram_usage_<fw>.csv`, the per-byte WRAM usage classes behind doc 11.
 - `payloads/` — border reset payload (assembly + DATA_SND packets).
 - `harness/` — disassemblers, tracers, the bsnes logging patch, libretro
   frontend, test-ROM generators, the SameBoy cycle counter, and analysis

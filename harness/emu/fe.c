@@ -37,8 +37,11 @@ static void ipoll(void){}
  static int press_from=-1, press_to=-1, press_id=-1;
 static int16_t ist(unsigned port,unsigned dev,unsigned idx,unsigned id){
   if(port==0 && (int)id==press_id && (int)g_fr>=press_from && (int)g_fr<press_to) return 1;
-  const char*q=getenv("PRESSSEQ"); if(q && port==0){ char b[1024]; strncpy(b,q,1023); b[1023]=0;
-    for(char*t=strtok(b,","); t; t=strtok(NULL,",")){ int i,f,e; if(sscanf(t,"%d:%d:%d",&i,&f,&e)==3 && (int)id==i && (int)g_fr>=f && (int)g_fr<e) return 1; } }
+  static int np=-1; static int pid[200000], pf[200000], pt[200000];
+  if(np<0){ np=0; const char*q=getenv("PRESSSEQ");
+    if(q){ char*b=strdup(q); for(char*t=strtok(b,","); t && np<200000; t=strtok(NULL,",")) if(sscanf(t,"%d:%d:%d",&pid[np],&pf[np],&pt[np])==3) np++; free(b); }
+    const char*fn=getenv("PRESSFILE"); if(fn){ FILE*f=fopen(fn,"r"); while(f && np<200000 && fscanf(f,"%d %d %d",&pid[np],&pf[np],&pt[np])==3) np++; if(f) fclose(f); } }
+  if(port==0) for(int k=0;k<np;k++) if((int)id==pid[k] && (int)g_fr>=pf[k] && (int)g_fr<pt[k]) return 1;
   return 0;}
 int main(int argc,char**argv){
   // fe core.so sysdir bios game.gb frames [reset_at_frame] [press_id from to]
