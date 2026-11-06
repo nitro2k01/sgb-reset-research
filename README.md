@@ -51,6 +51,7 @@ Everything in this repo is produced by Claude.
 | [09](docs/09-sgb2-dmg-mode-lock.md) | SGB2 L+Left "DMG mode" lock, warm-boot detection, and why it is ignored after Reset |
 | [10](docs/10-resident-payload-across-reset.md) | Whether a RAM-resident payload can survive and re-execute across a SNES reset (and the mid-run DMG-mode goal) |
 | [11](docs/11-wram-map-for-snes-payloads.md) | Measured WRAM map for uploading SNES programs with DATA_SND/DATA_TRN + JUMP, all firmwares; JUMP/IRQ/NMI rules; SGB1 ATTR_BLK overrun |
+| [12](docs/12-stage1-loader-loop.md) | A Space Invaders-style stage-1 loader loop: what calling the packet parser directly skips, and why `LDA $FFDB` picks the wrong entry (DB = `$01` after JUMP) |
 
 ## Repository contents
 
