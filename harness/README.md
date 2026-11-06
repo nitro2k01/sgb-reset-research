@@ -51,6 +51,8 @@ The patch adds logging only (plus a few switches); it does not change emulation.
 | `LOGVID=1` | Log SNES line-0 and GB frame/line events (video latency) |
 | `DUMPAT=f1,f2 DUMPADDR=a,b` | Dump WRAM bytes at given frames |
 | `SHOTS=f1,f2` / `VIDDUMP=1` (frontend) | Save PPM screenshots / dump one pixel column per frame |
+| `PRESSSEQ=id:from:to,...` (frontend) | Hold libretro joypad button `id` on controller 1 for frames [from, to) |
+| `RESETS=f1,f2` (frontend) | Press SNES Reset (WRAM kept) at the given frames |
 
 Frontend usage: `./fe core.so <sysdir> <bios.sfc> <game.gb> <frames> [reset_frame] [button_id from to]`.
 

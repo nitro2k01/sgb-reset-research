@@ -48,6 +48,7 @@ Everything in this repo is produced by Claude.
 | [06](docs/06-controller-polling.md) | Controller polling rate and joypad forwarding to the ICD2 |
 | [07](docs/07-video-pipeline-and-latency.md) | ICD2 → VRAM pipeline, buffering, latency, racing-the-beam analysis |
 | [08](docs/08-boot-rom-cycle-formula.md) | Closed-form boot ROM cycle count as a function of header contents |
+| [09](docs/09-sgb2-dmg-mode-lock.md) | SGB2 L+Left "DMG mode" lock, warm-boot detection, and why it is ignored after Reset |
 
 ## Repository contents
 

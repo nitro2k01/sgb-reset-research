@@ -36,7 +36,10 @@ static size_t audb(const int16_t*d,size_t f){return f;}
 static void ipoll(void){}
  static int press_from=-1, press_to=-1, press_id=-1;
 static int16_t ist(unsigned port,unsigned dev,unsigned idx,unsigned id){
-  if(port==0 && (int)id==press_id && (int)g_fr>=press_from && (int)g_fr<press_to) return 1; return 0;}
+  if(port==0 && (int)id==press_id && (int)g_fr>=press_from && (int)g_fr<press_to) return 1;
+  const char*q=getenv("PRESSSEQ"); if(q && port==0){ char b[1024]; strncpy(b,q,1023); b[1023]=0;
+    for(char*t=strtok(b,","); t; t=strtok(NULL,",")){ int i,f,e; if(sscanf(t,"%d:%d:%d",&i,&f,&e)==3 && (int)id==i && (int)g_fr>=f && (int)g_fr<e) return 1; } }
+  return 0;}
 int main(int argc,char**argv){
   // fe core.so sysdir bios game.gb frames [reset_at_frame] [press_id from to]
   void*h=dlopen(argv[1],RTLD_NOW); if(!h){fprintf(stderr,"%s\n",dlerror());return 1;}
@@ -51,6 +54,7 @@ int main(int argc,char**argv){
   struct retro_game_info gi={argv[4],NULL,0,NULL};
   if(!p_retro_load_game(&gi)){fprintf(stderr,"load failed\n");return 1;}
   fprintf(stderr,"region=%s\n",p_retro_get_region()==0?"NTSC":"PAL");
-  for(g_fr=1;(int)g_fr<=frames;g_fr++){ if((int)g_fr==reset_at){fprintf(stderr,"=== SNES RESET at frame %u ===\n",g_fr);p_retro_reset();} p_retro_run(); }
+  for(g_fr=1;(int)g_fr<=frames;g_fr++){ { char rk[32]; sprintf(rk,",%u,",g_fr); char rb[256]; snprintf(rb,256,",%s,",getenv("RESETS")?getenv("RESETS"):""); if(strstr(rb,rk)) { fprintf(stderr,"=== SNES RESET at frame %u ===\n",g_fr); p_retro_reset(); } }
+    if((int)g_fr==reset_at){fprintf(stderr,"=== SNES RESET at frame %u ===\n",g_fr);p_retro_reset();} p_retro_run(); }
   return 0;
 }
