@@ -49,6 +49,7 @@ Everything in this repo is produced by Claude.
 | [07](docs/07-video-pipeline-and-latency.md) | ICD2 → VRAM pipeline, buffering, latency, racing-the-beam analysis |
 | [08](docs/08-boot-rom-cycle-formula.md) | Closed-form boot ROM cycle count as a function of header contents |
 | [09](docs/09-sgb2-dmg-mode-lock.md) | SGB2 L+Left "DMG mode" lock, warm-boot detection, and why it is ignored after Reset |
+| [10](docs/10-resident-payload-across-reset.md) | Whether a RAM-resident payload can survive and re-execute across a SNES reset (and the mid-run DMG-mode goal) |
 
 ## Repository contents
 
