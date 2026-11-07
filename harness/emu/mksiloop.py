@@ -2,9 +2,9 @@
 # then send every SGB command through it, then JUMP to a stage-2 stub at $00:1900.
 import random, mkscript, sys
 VAR = sys.argv[1] if len(sys.argv) > 1 else 'orig'
-# orig : the loop as given (LDA $FFDB with the DB that JUMP leaves, $01)
+# orig : short LDA $FFDB with the DB that JUMP leaves ($01)
 # fixdb: PHK/PLB first, so LDA $FFDB reads bank $00 (but firmware code then runs with DB=$00)
-# long : LDA $00FFDB (long), DB left at $01
+# long : LDA $00FFDB (long), DB left at $01 -- byte-identical to Space Invaders' loop (ROM $C175)
 FIXDB = VAR == 'fixdb'
 random.seed(1)
 snes=open('../w/sgb12.smc','rb').read()

@@ -1,16 +1,18 @@
 # 12. A Space Invaders-style stage-1 loop: what it runs, and the version check
 
-The loop under test (uploaded to `$7E:1800`, entered as `$00:1800`):
+The loop as it is in *Space Invaders* (U/S), sent by DATA_SND packets at ROM
+offset `$C170`/`$C180` to `$7E:1800` and started by the JUMP packet at `$C190`
+(`91 00 18 00 00 18 00`: target `$00:1800`, NMI pointer `$00:1800`):
 
 ```
-        STZ $1700
-loop:   STZ $4200          ; NMITIMEN = 0
-        LDA $FFDB          ; ROM version byte
-        BEQ v10
-        JSR $BBED          ; v1.1+
-        BRA loop
-v10:    JSR $BBF0          ; v1.0
-        BRA loop
+1800    9C 00 17       STZ $1700
+1803    9C 00 42 loop: STZ $4200          ; NMITIMEN = 0
+1806    AF DB FF 00    LDA $00FFDB        ; ROM version byte (long)
+180A    F0 05          BEQ v10
+180C    20 ED BB       JSR $BBED          ; v1.1+
+180F    80 F2          BRA loop
+1811    20 F0 BB  v10: JSR $BBF0          ; v1.0
+1814    80 ED          BRA loop
 ```
 
 ## 12.1 What `$BBED` / `$BBF0` is
@@ -77,36 +79,32 @@ Other details:
 - `JUMP` enters the payload with **DB = `$01`, D = `$0000`, P = `$36`** (8-bit
   A/X, I set) and S = `$0FF0` (measured, all four firmwares).
 
-## 12.3 The version check is wrong as written
+## 12.3 The version check
 
-| Firmware | `$00:FFDB` | Entry needed | `$01:FFDB` |
+| Firmware | `$00:FFDB` | Entry needed | Taken by the loop |
 |---|---|---|---|
-| v1.0 | `$00` | `$BBF0` | `$00` |
-| v1.1 | `$01` | `$BBED` | `$00` |
-| v1.2 | `$02` | `$BBED` | `$00` |
-| SGB2 | `$10` | `$BBED` | `$00` |
+| v1.0 | `$00` | `$BBF0` | `$BBF0` ✓ |
+| v1.1 | `$01` | `$BBED` | `$BBED` ✓ |
+| v1.2 | `$02` | `$BBED` | `$BBED` ✓ |
+| SGB2 | `$10` | `$BBED` | `$BBED` ✓ |
 
-The choice of entry by `$00:FFDB` (zero → `$BBF0`, nonzero → `$BBED`) is
-right for all four, and the code at `$BBED` (v1.1/v1.2/SGB2) and `$BBF0`
-(v1.0) is identical.
+Correct on all four, and the code at `$BBED` (v1.1/v1.2/SGB2) and `$BBF0`
+(v1.0) is identical. Calling the other one would crash: on v1.1+ `$BBF0` is
+the last operand byte of `LDA $006002` (`$00` = `BRK`).
 
-But the firmware sets **DB = `$01`** at reset (`$8116: LDA #$01 / PHA / PLB`)
-and runs with it permanently — its absolute-addressed tables are in bank `$01`
-(e.g. `LDA $E452,X` in `$B9BE`). `JUMP` doesn't change DB, so `LDA $FFDB` reads
-**`$01:FFDB` = `$00` on every revision**, and the loop always takes the v1.0
-branch. On v1.1/v1.2/SGB2, `$BBF0` is the last operand byte of
-`LDA $006002` (`$00` = `BRK`), so the loader crashes on its first pass.
+The **long** read matters. JUMP's three-byte target sets only the program
+bank (`JML [$00B8]`); it doesn't touch DB, which the firmware sets to `$01`
+at reset (`$8116: LDA #$01 / PHA / PLB`) and keeps, since its absolute-addressed
+tables are in bank `$01`. Measured on entry to a JUMP payload, all four
+firmwares: DB = `$01`, D = `$0000`, P = `$36`, S = `$0FF0`
+([`mkdbprobe.py`](../harness/emu/mkdbprobe.py)). So:
 
-Setting DB = `$00` (e.g. `PHK / PLB`) fixes the check but breaks the
-firmware: command handlers then read their bank-`$01` tables from bank `$00`.
-`DATA_SND` and `JUMP` still work (they use only `$06xx` and long pointers), but
-palette commands and `*_TRN` misbehave.
-
-**Fix**: read the byte with a long address and leave DB at `$01`:
-
-```
-        LDA $00FFDB        ; AF DB FF 00
-```
+- `LDA $00FFDB` (what the game does) reads the real version byte, and DB stays
+  `$01`, which the firmware routines it calls need.
+- A short `LDA $FFDB` would read `$01:FFDB` = `$00` on every revision and
+  always take the v1.0 branch (crash on v1.1+).
+- Setting DB = `$00` to make a short read work breaks the command handlers
+  (bank-`$01` tables read from bank `$00`); only DATA_SND and JUMP still work.
 
 Emulator results (`harness/emu/mksiloop.py`: upload the loop, JUMP to it,
 send PAL01–12, ATTR_*, SOUND, PAL_SET, PAL_TRN, ATTR_TRN/SET, ATRC_EN,
@@ -115,10 +113,6 @@ PAL_PRI, SOU_TRN, then JUMP to a stub):
 
 | Variant | v1.0 | v1.1 | v1.2 | SGB2 |
 |---|---|---|---|---|
-| as written (`LDA $FFDB`, DB = `$01`) | all commands, stage 2 runs | crash on first pass | crash | crash |
-| `PHK/PLB` first (DB = `$00`) | loop runs, TRN/palette commands fail | same | same | same |
-| `LDA $00FFDB` | all commands, stage 2 runs | all | all | all |
-| DB = `$00`, only DATA_SND + JUMP (`mksimin.py`) | — | works | — | works |
-
-If the real loader reaches this loop with DB = `$00` set by earlier code, it
-works on all revisions as long as it only uses DATA_SND and JUMP.
+| Space Invaders' bytes (`long`) | all commands, stage 2 runs | all | all | all |
+| short `LDA $FFDB` (`orig`) | all | crash on first pass | crash | crash |
+| `PHK/PLB` + short read (`fixdb`) | TRN/palette commands fail | same | same | same |
